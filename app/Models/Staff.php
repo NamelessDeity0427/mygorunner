@@ -1,41 +1,18 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class Staff extends Model
 {
-    use HasUuids, HasFactory; // Added HasUuids
+    use HasUuids, HasFactory;
 
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
+    protected $table = 'staff';
     protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * The table associated with the model.
-     * Laravel correctly pluralizes 'staff' to 'staff', so this is optional.
-     * protected $table = 'staff';
-     */
-
-    /**
-     * The attributes that are mass assignable.
-     * Be cautious with 'is_dispatcher' and 'is_admin'. Set explicitly where possible.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'user_id',
         'position',
@@ -43,47 +20,53 @@ class Staff extends Model
         'is_admin',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'is_dispatcher' => 'boolean',
         'is_admin' => 'boolean',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // --- Relationships ---
-
-    /**
-     * Get the user that owns the staff profile.
-     */
+    // Relationships
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    /**
-     * Get the remittances processed by the staff member.
-     */
-    public function processedRemittances()
+    public function processedPayments()
     {
-        return $this->hasMany(Remittance::class, 'staff_id', 'id');
+        return $this->hasMany(Payment::class, 'processed_by', 'id');
     }
 
-    /**
-     * Get the support tickets assigned to the staff member.
-     */
-    public function assignedSupportTickets()
+    public function processedRemittances()
+    {
+        return $this->hasMany(Remittance::class, 'processed_by', 'id');
+    }
+
+    public function assignedTickets()
     {
         return $this->hasMany(SupportTicket::class, 'assigned_to', 'id');
     }
 
-    /**
-     * Get the redemption requests processed by this staff member.
-     */
-    public function processedRedemptionRequests()
+    // Scopes
+    public function scopeDispatchers($query)
     {
-        return $this->hasMany(RedemptionRequest::class, 'processed_by', 'id');
+        return $query->where('is_dispatcher', true);
+    }
+
+    public function scopeAdmins($query)
+    {
+        return $query->where('is_admin', true);
+    }
+
+    // Helper Methods
+    public function isDispatcher(): bool
+    {
+        return $this->is_dispatcher;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin;
     }
 }

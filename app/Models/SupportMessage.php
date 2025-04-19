@@ -1,75 +1,54 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class SupportMessage extends Model
 {
-    use HasUuids, HasFactory; // Added HasUuids
+    use HasUuids, HasFactory;
 
-    protected $table = 'support_messages'; // Explicit table name
-
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
+    protected $table = 'support_messages';
     protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * Indicates if the model should be timestamped. Only 'created_at'.
-     *
-     * @var bool
-     */
-    public $timestamps = true; // Manages created_at
-
-    const UPDATED_AT = null; // Disable updated_at
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'ticket_id',
-        'user_id', // User who wrote the message
+        'user_id',
         'message',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // --- Relationships ---
-
-    /**
-     * Get the support ticket that the message belongs to.
-     */
+    // Relationships
     public function ticket()
     {
         return $this->belongsTo(SupportTicket::class, 'ticket_id', 'id');
     }
 
-    /**
-     * Get the user who wrote the message.
-     */
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    // Scopes
+    public function scopeForTicket($query, $ticketId)
+    {
+        return $query->where('ticket_id', $ticketId);
+    }
+
+    public function scopeByUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    // Helper Methods
+    public function isFromStaff(): bool
+    {
+        return $this->user && $this->user->isStaffOrAdmin();
     }
 }

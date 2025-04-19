@@ -1,66 +1,44 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class RemittanceDetail extends Model
 {
-    use HasUuids, HasFactory; // Added HasUuids
+    use HasUuids, HasFactory;
 
-    protected $table = 'remittance_details'; // Explicit table name
-
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
+    protected $table = 'remittance_details';
     protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'remittance_id',
         'booking_id',
-        'amount', // Portion of booking amount in this remittance
+        'amount',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'amount' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // --- Relationships ---
-
-    /**
-     * Get the parent remittance record.
-     */
+    // Relationships
     public function remittance()
     {
         return $this->belongsTo(Remittance::class, 'remittance_id', 'id');
     }
 
-    /**
-     * Get the booking associated with this remittance detail.
-     */
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id', 'id');
+    }
+
+    // Scopes
+    public function scopeForRemittance($query, $remittanceId)
+    {
+        return $query->where('remittance_id', $remittanceId);
     }
 }

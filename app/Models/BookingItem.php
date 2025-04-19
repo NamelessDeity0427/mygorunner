@@ -1,60 +1,47 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class BookingItem extends Model
 {
-    use HasUuids, HasFactory; // Added HasUuids
+    use HasUuids, HasFactory;
 
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
+    protected $table = 'booking_items';
     protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * The attributes that are mass assignable.
-     * 'price' might be set by admin/system or rider, review flow.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'booking_id',
-        'name',
+        'item_name',
         'quantity',
-        'notes',
-        'price', // Price per item
+        'price',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'quantity' => 'integer',
         'price' => 'decimal:2',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // --- Relationships ---
-
-    /**
-     * Get the booking that the item belongs to.
-     */
+    // Relationships
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id', 'id');
+    }
+
+    // Accessor for subtotal
+    public function getSubtotalAttribute(): float
+    {
+        return $this->quantity * $this->price;
+    }
+
+    // Scopes
+    public function scopeForBooking($query, $bookingId)
+    {
+        return $query->where('booking_id', $bookingId);
     }
 }

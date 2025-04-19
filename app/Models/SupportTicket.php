@@ -1,89 +1,99 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class SupportTicket extends Model
 {
-    use HasUuids, HasFactory; // Added HasUuids
+    use HasUuids, HasFactory;
 
-    protected $table = 'support_tickets'; // Explicit table name
-
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
+    protected $table = 'support_tickets';
     protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * The attributes that are mass assignable.
-     * 'ticket_number', 'status', 'assigned_to', 'resolved_at' should be set explicitly.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'ticket_number', // Usually generated automatically
-        'user_id', // Creator (Customer/Rider/Staff/Admin)
-        'booking_id', // Optional associated booking
+        'ticket_number',
+        'user_id',
+        'booking_id',
         'subject',
         'description',
-        // 'status', // Managed explicitly
-        // 'assigned_to', // Staff ID (UUID) - Assigned explicitly
-        // 'resolved_at', // Set explicitly
+        'assigned_to',
+        'status',
+        'resolved_at',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
-        'status' => 'string', // Cast enum
+        'status' => 'string',
         'resolved_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // --- Relationships ---
-
-    /**
-     * Get the user who created the support ticket.
-     */
+    // Relationships
     public function creator()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    /**
-     * Get the booking associated with the support ticket (if any).
-     */
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id', 'id');
     }
 
-    /**
-     * Get the staff member assigned to the support ticket.
-     */
     public function assignee()
     {
         return $this->belongsTo(Staff::class, 'assigned_to', 'id');
     }
 
-    /**
-     * Get the messages for the support ticket.
-     */
     public function messages()
     {
-        return $this->hasMany(SupportMessage::class, 'ticket_id', 'id')->orderBy('created_at', 'asc'); // Order messages chronologically
+        return $this->hasMany(SupportMessage::class, 'ticket_id', 'id')->orderBy('created_at', 'asc');
+    }
+
+    // Scopes
+    public function scopeOpen($query)
+    {
+        return $query->where('status', 'open');
+    }
+
+    public function scopeResolved($query)
+    {
+        return $query->where('status', 'resolved');
+    }
+
+    public function scopeAssignedTo($query, $staffId)
+    {
+        return $query->where('assigned_to', $staffId);
+    }
+
+    // Helper Methods
+    public function isResolved(): bool
+    {
+        return $this->status === 'resolved' && !is_null($this->resolved_at);
+    }
+
+    public function assignTo($staffId): void
+    {
+        $this->update(['assigned_to' => $staffId]);
+    }
+
+    // Boot method for event listeners
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($ticket) {
+            if (!$ticket->ticket_number) {
+                $ticket->ticket_number = 'TICKET-' . str_pad(static::count() + 1, 6, '0', STR_PAD_LEFT);
+            }
+        });
+
+        static::updating(function ($ticket) {
+            if ($ticket->isDirty('status') && $ticket->status === 'resolved') {
+                $ticket->resolved_at = now();
+            }
+        });
     }
 }

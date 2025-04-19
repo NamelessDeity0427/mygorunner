@@ -1,81 +1,84 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
-// Spatial integration
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
-
-/**
- * @property Point|null $check_in_location
- * @property Point|null $check_out_location
- */
 class Attendance extends Model
 {
-    // Add HasSpatial if using check_in/out locations
-    use HasUuids, HasFactory, HasSpatial; // Added HasUuids and HasSpatial
+    use HasUuids, HasFactory, HasSpatial;
 
-    protected $table = 'attendance'; // Explicit table name
-
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
+    protected $table = 'attendance';
     protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * The attributes that are mass assignable.
-     * 'total_hours' should be calculated, not fillable.
-     * Locations should likely be set explicitly.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
-        'rider_id',
+        'user_id',
         'check_in',
-        'check_out', // Nullable
-        // 'total_hours', // Calculated field
-        'check_in_location', // Added
-        'check_out_location', // Added
+        'check_out',
+        'check_in_location',
+        'check_out_location',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'check_in' => 'datetime',
         'check_out' => 'datetime',
         'total_hours' => 'decimal:2',
-        'check_in_location' => Point::class, // Added cast
-        'check_out_location' => Point::class, // Added cast
+        'check_in_location' => Point::class,
+        'check_out_location' => Point::class,
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // --- Relationships ---
-
-    /**
-     * Get the rider associated with the attendance record.
-     */
-    public function rider()
+    // Relationships
+    public function user()
     {
-        return $this->belongsTo(Rider::class, 'rider_id', 'id');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    /**
-     * REMOVED: Relationship to AttendancePhoto
-     * public function photos() { ... }
-     */
+    // Accessor for total_hours
+    public function getTotalHoursAttribute()
+    {
+        if ($this->check_in && $this->check_out) {
+            return round($this->check_in->diffInHours($this->check_out), 2);
+        }
+        return 0;
+    }
+
+    // Scopes
+    public function scopeForRider($query, $riderId)
+    {
+        return $query->where('user_id', $riderId);
+    }
+
+    public function scopeOnDate($query, $date)
+    {
+        return $query->whereDate('check_in', $date);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNull('check_out');
+    }
+
+    // Helper Methods
+    public function isActive(): bool
+    {
+        return !is_null($this->check_in) && is_null($this->check_out);
+    }
+
+    // Boot method for event listeners
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function ($attendance) {
+            if ($attendance->isDirty('check_out') && $attendance->check_out) {
+                $attendance->total_hours = $attendance->getTotalHoursAttribute();
+            }
+        });
+    }
 }

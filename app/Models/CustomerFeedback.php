@@ -1,76 +1,58 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class CustomerFeedback extends Model
 {
-    use HasUuids, HasFactory; // Added HasUuids
+    use HasUuids, HasFactory;
 
-    protected $table = 'customer_feedback'; // Explicit table name
-
-    /**
-     * The primary key type.
-     *
-     * @var string
-     */
+    protected $table = 'customer_feedback';
     protected $keyType = 'string';
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     *
-     * @var bool
-     */
     public $incrementing = false;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'booking_id',
         'customer_id',
-        'rider_id',
         'rating',
         'comments',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
-        'rating' => 'integer', // Ensure rating is within expected range (e.g., 1-5) via validation
+        'rating' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    // --- Relationships ---
-
-    /**
-     * Get the booking the feedback is for.
-     */
+    // Relationships
     public function booking()
     {
         return $this->belongsTo(Booking::class, 'booking_id', 'id');
     }
 
-    /**
-     * Get the customer who gave the feedback.
-     */
     public function customer()
     {
         return $this->belongsTo(Customer::class, 'customer_id', 'id');
     }
 
-    /**
-     * Get the rider who received the feedback.
-     */
-    public function rider()
+    // Scopes
+    public function scopeForBooking($query, $bookingId)
     {
-        return $this->belongsTo(Rider::class, 'rider_id', 'id');
+        return $query->where('booking_id', $bookingId);
+    }
+
+    public function scopeHighRated($query, $minRating = 4)
+    {
+        return $query->where('rating', '>=', $minRating);
+    }
+
+    // Helper Methods
+    public static function averageRatingForRider($riderId): float
+    {
+        return self::whereHas('booking', function ($query) use ($riderId) {
+            $query->where('rider_id', $riderId);
+        })->avg('rating') ?? 0.0;
     }
 }

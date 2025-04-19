@@ -1,59 +1,56 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-// No UUID needed if using standard auto-incrementing ID
+use Illuminate\Support\Facades\Cache;
 
 class SystemSetting extends Model
 {
     use HasFactory;
 
-    protected $table = 'system_settings'; // Explicit table name
+    protected $table = 'system_settings';
 
-    // Using standard auto-incrementing ID, so no UUID traits/properties needed.
-
-    /**
-     * The attributes that are mass assignable.
-     * Only 'key' and 'value' are typically needed.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'key',
         'value',
     ];
 
-    /**
-     * The attributes that should be cast.
-     * Consider casting 'value' if it stores specific types like JSON, boolean, number.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
-        // Example: 'value' => 'json',
-        // Example: 'value' => 'boolean',
-        // Example: 'value' => 'integer',
+        'value' => 'json',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
-    /**
-     * Helper method to retrieve a setting's value.
-     * Caches the value for the duration of the request.
-     *
-     * @param string $key The setting key.
-     * @param mixed|null $default The default value if the key is not found.
-     * @return mixed
-     */
+    // Retrieve a setting's value
     public static function getValue(string $key, mixed $default = null): mixed
     {
-        static $settingsCache = null;
+        return Cache::remember("setting.{$key}", now()->addHours(24), function () use ($key, $default) {
+            $setting = self::where('key', $key)->first();
+            return $setting ? json_decode($setting->value, true) : $default;
+        });
+    }
 
-        if (is_null($settingsCache)) {
-            // Cache all settings in a single query for efficiency
-            $settingsCache = self::all()->pluck('value', 'key');
-        }
+    // Set or update a setting
+    public static function setValue(string $key, mixed $value): void
+    {
+        self::updateOrCreate(
+            ['key' => $key],
+            ['value' => is_array($value) ? json_encode($value) : $value]
+        );
+        Cache::forget("setting.{$key}");
+    }
 
-        return $settingsCache->get($key, $default);
+    // Scopes
+    public function scopeForCategory($query, string $category)
+    {
+        return $query->where('key', 'like', "{$category}%");
+    }
+
+    // Helper Methods
+    public static function getServiceFee(string $serviceType): float
+    {
+        $fees = self::getValue('service_fees', []);
+        return $fees[$serviceType] ?? 0.0;
     }
 }
