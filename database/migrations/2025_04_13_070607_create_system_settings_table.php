@@ -16,7 +16,13 @@ return new class extends Migration
         });
 
         DB::table('system_settings')->insert([
-            ['key' => 'base_delivery_fee', 'value' => '50.00', 'created_at' => now(), 'updated_at' => now()]
+            [
+                'id' => Str::uuid(),
+                'key' => 'base_delivery_fee',
+                'value' => '50.00',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
         ]);
     }
 

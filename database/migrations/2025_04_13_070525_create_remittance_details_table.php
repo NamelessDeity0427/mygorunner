@@ -10,7 +10,7 @@ return new class extends Migration
         Schema::create('remittance_details', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('remittance_id')->constrained('remittances')->onDelete('cascade');
-            $table->foreignUuid('booking_id')->constrained('bookings')->onDelete('set null');
+            $table->foreignUuid('booking_id')->nullable()->constrained('bookings')->onDelete('set null');
             $table->decimal('amount', 10, 2);
             $table->timestamp('created_at')->useCurrent();
         });

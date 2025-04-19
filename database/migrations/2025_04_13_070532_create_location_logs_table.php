@@ -9,7 +9,7 @@ return new class extends Migration
     {
         Schema::create('location_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade')->index();
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignUuid('booking_id')->nullable()->constrained('bookings')->onDelete('set null');
             $table->point('location');
             $table->timestamp('created_at')->useCurrent();

@@ -11,7 +11,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('booking_id')->constrained('bookings')->onDelete('cascade');
             $table->foreignUuid('customer_id')->constrained('customers')->onDelete('cascade');
-            $table->foreignUuid('rider_id')->constrained('riders')->onDelete('set null');
+            $table->foreignUuid('rider_id')->nullable()->constrained('riders')->onDelete('set null');
             $table->unsignedTinyInteger('rating');
             $table->text('comments')->nullable();
             $table->timestamps();

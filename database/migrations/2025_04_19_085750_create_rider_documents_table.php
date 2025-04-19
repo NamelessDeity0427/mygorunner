@@ -9,7 +9,7 @@ return new class extends Migration
     {
         Schema::create('rider_documents', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('rider_id')->constrained('riders')->onDelete('cascade')->index();
+            $table->foreignUuid('rider_id')->nullable()->constrained('riders')->onDelete('cascade');
             $table->string('file_path');
             $table->timestamps();
         });

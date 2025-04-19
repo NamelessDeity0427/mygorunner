@@ -9,7 +9,7 @@ return new class extends Migration
     {
         Schema::create('customer_addresses', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('customer_id')->constrained('customers')->onDelete('cascade')->index();
+            $table->foreignUuid('customer_id')->nullable()->constrained('customers')->onDelete('cascade');
             $table->string('label');
             $table->string('address', 1000);
             $table->point('location');
