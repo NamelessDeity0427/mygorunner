@@ -4,47 +4,45 @@ namespace App\Notifications;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\DatabaseMessage;
 
-class GeneralNotification extends Notification
+class BookingNotification extends Notification
 {
     use Queueable;
 
     protected $message;
-    protected $channel;
+    protected $channels;
     protected $title;
 
-    /**
-     * Create a new notification instance.
-     */
-    public function __construct(string $message, string $channel, ?string $title = null)
+    public function __construct(string $message, array $channels, ?string $title = null)
     {
         $this->message = $message;
-        $this->channel = $channel;
+        $this->channels = $channels;
         $this->title = $title;
     }
 
-    /**
-     * Get the notification's delivery channels.
-     */
     public function via($notifiable): array
     {
-        return [$this->channel];
+        return $this->channels;
     }
 
-    /**
-     * Get the mail representation of the notification.
-     */
     public function toMail($notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject($this->title ?? 'System Notification')
+            ->subject($this->title ?? 'MyGoRunner Notification')
             ->line($this->message)
-            ->action('View Details', url('/'));
+            ->action('View Details', url('/dashboard'));
     }
 
-    /**
-     * Get the array representation of the notification.
-     */
+    public function toDatabase($notifiable): DatabaseMessage
+    {
+        return new DatabaseMessage([
+            'message' => $this->message,
+            'title' => $this->title ?? 'Notification',
+            'type' => 'booking_update',
+        ]);
+    }
+
     public function toArray($notifiable): array
     {
         return [

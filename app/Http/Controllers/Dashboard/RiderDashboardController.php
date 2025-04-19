@@ -4,28 +4,38 @@ namespace App\Http\Controllers\Dashboard;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Attendance;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
-use Exception;
 
 class RiderDashboardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'role:rider']);
+    }
+
     public function index(): View
     {
-        $user = Auth::user();
-        $rider = $user->rider;
+        $rider = Auth::user()->rider;
 
-        $assignedBookings = Booking::where('rider_id', $rider?->id)
-            ->whereIn('status', ['assigned', 'in_progress'])
-            ->with(['customer.user:id,name', 'items'])
+        $assignedBookings = Booking::where('rider_id', $rider->id)
+            ->whereIn('status', ['assigned', 'at_pickup', 'picked_up', 'on_the_way', 'at_delivery'])
+            ->with([
+                'customer.user' => function ($query) {
+                    $query->select('id', 'name');
+                },
+                'items'
+            ])
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
-        $todayAttendance = Attendance::where('rider_id', $rider?->id)
+        $todayAttendance = Attendance::where('rider_id', $rider->id)
             ->whereDate('check_in', today())
             ->orderBy('check_in', 'desc')
             ->first();
@@ -42,16 +52,18 @@ class RiderDashboardController extends Controller
         }
 
         try {
-            $booking->update(['status' => 'in_progress']);
-            event(new \App\Events\BookingStatusUpdated($booking));
-            return back()->with('success', "Booking #{$booking->booking_number} accepted.");
-        } catch (Exception $e) {
-            Log::error("Booking acceptance failed", [
+            return DB::transaction(function () use ($booking) {
+                $booking->update(['status' => 'at_pickup']);
+                event(new \App\Events\BookingStatusUpdated($booking));
+                return back()->with('success', "Booking #{$booking->id} accepted.");
+            });
+        } catch (\Exception $e) {
+            Log::error('Booking acceptance failed', [
                 'booking_id' => $booking->id,
                 'rider_id' => $rider->id,
                 'error' => $e->getMessage(),
             ]);
-            return back()->with('error', 'Failed to accept booking.');
+            return back()->with('error', 'Failed to accept booking: ' . $e->getMessage());
         }
     }
 
@@ -67,10 +79,11 @@ class RiderDashboardController extends Controller
             default => now()->startOfDay(),
         };
 
-        $earnings = Booking::where('rider_id', $rider->id)
-            ->where('status', 'completed')
-            ->where('created_at', '>=', $startDate)
-            ->sum('estimated_cost');
+        $earnings = Payment::whereHas('booking', function ($query) use ($rider, $startDate) {
+            $query->where('rider_id', $rider->id)
+                  ->where('status', 'completed')
+                  ->where('created_at', '>=', $startDate);
+        })->sum('amount');
 
         return view('rider.earnings', compact('earnings', 'period'));
     }

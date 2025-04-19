@@ -5,9 +5,6 @@ use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvi
 
 class EventServiceProvider extends ServiceProvider
 {
-    /**
-     * The event to listener mappings for the application.
-     */
     protected $listen = [
         \App\Events\BookingCreated::class => [
             \App\Listeners\NotifyUsers::class,
@@ -15,11 +12,10 @@ class EventServiceProvider extends ServiceProvider
         \App\Events\BookingStatusUpdated::class => [
             \App\Listeners\NotifyUsers::class,
         ],
+        \App\Events\RiderLocationUpdated::class => [],
+        \App\Events\RiderStatusUpdated::class => [],
     ];
 
-    /**
-     * Register any events for your application.
-     */
     public function boot(): void
     {
         //

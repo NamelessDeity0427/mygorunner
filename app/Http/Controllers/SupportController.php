@@ -1,22 +1,31 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
+use App\Models\SupportMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
-use Exception;
 
 class SupportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(['auth', 'role:customer'])->only(['create', 'store']);
+        $this->middleware(['auth', 'role:admin,staff'])->only(['index']);
+    }
+
     public function index(): View
     {
-        $tickets = SupportTicket::with('user')
+        $tickets = SupportTicket::with(['user' => function ($query) {
+            $query->select('id', 'name');
+        }])
             ->latest()
             ->paginate(15);
+
         return view('admin.support.index', compact('tickets'));
     }
 
@@ -34,20 +43,29 @@ class SupportController extends Controller
         ]);
 
         try {
-            SupportTicket::create([
-                'user_id' => Auth::id(),
-                'subject' => $validated['subject'],
-                'description' => $validated['description'],
-                'priority' => $validated['priority'],
-                'status' => 'open',
-            ]);
-            return redirect()->route('customer.dashboard')->with('success', 'Support ticket created successfully.');
-        } catch (Exception $e) {
-            Log::error("Support ticket creation failed", [
+            return DB::transaction(function () use ($validated) {
+                $ticket = SupportTicket::create([
+                    'user_id' => Auth::id(),
+                    'subject' => $validated['subject'],
+                    'description' => $validated['description'],
+                    'priority' => $validated['priority'],
+                    'status' => 'open',
+                ]);
+
+                SupportMessage::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => Auth::id(),
+                    'message' => $validated['description'],
+                ]);
+
+                return redirect()->route('customer.dashboard')->with('success', "Support ticket #{$ticket->id} created successfully.");
+            });
+        } catch (\Exception $e) {
+            Log::error('Support ticket creation failed', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
             ]);
-            return back()->withInput()->with('error', 'Failed to create support ticket.');
+            return back()->withInput()->with('error', 'Failed to create support ticket: ' . $e->getMessage());
         }
     }
 }

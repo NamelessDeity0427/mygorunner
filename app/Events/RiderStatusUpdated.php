@@ -1,37 +1,38 @@
 <?php
 namespace App\Events;
 
-use App\Models\Booking;
+use App\Models\Rider;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 
-class BookingCreated implements ShouldBroadcast
+class RiderStatusUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $booking;
+    public $rider;
 
-    public function __construct(Booking $booking)
+    public function __construct(Rider $rider)
     {
-        $this->booking = $booking;
+        $this->rider = $rider;
     }
 
     public function broadcastOn(): array
     {
         return [
-            new Channel('bookings.' . $this->booking->customer_id),
+            new Channel('riders.' . $this->rider->id),
+            new Channel('admin.riders'),
         ];
     }
 
     public function broadcastWith(): array
     {
         return [
-            'booking_id' => $this->booking->id,
-            'status' => $this->booking->status,
-            'created_at' => $this->booking->created_at->toIso8601String(),
+            'rider_id' => $this->rider->id,
+            'status' => $this->rider->status,
+            'updated_at' => now()->toIso8601String(),
         ];
     }
 }

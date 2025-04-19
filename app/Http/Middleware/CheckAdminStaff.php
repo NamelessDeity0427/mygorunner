@@ -9,35 +9,32 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckAdminStaff
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next): Response
     {
         if (!Auth::check()) {
-            Log::warning("Unauthorized access attempt: User not authenticated", [
+            Log::warning('Unauthorized access attempt: User not authenticated', [
                 'url' => $request->fullUrl(),
                 'ip' => $request->ip(),
             ]);
-            return redirect('/')->with('error', 'Please log in to access this area.');
+            return redirect()->route('login')->with('error', 'Please log in to access this area.');
         }
 
         $user = Auth::user();
-        if (!$user->hasAnyPermission(['manage-riders', 'manage-bookings', 'view-analytics'])) {
-            Log::warning("Unauthorized access attempt: Insufficient permissions", [
+        if ($user->user_type !== 'admin' && $user->user_type !== 'staff') {
+            Log::warning('Unauthorized access attempt: Insufficient role', [
                 'user_id' => $user->id,
+                'user_type' => $user->user_type,
                 'url' => $request->fullUrl(),
                 'ip' => $request->ip(),
             ]);
 
-            // Redirect based on user type
             $redirectRoute = match ($user->user_type) {
                 'customer' => 'customer.dashboard',
                 'rider' => 'rider.dashboard',
-                default => '/',
+                default => 'home',
             };
 
-            return redirect()->route($redirectRoute)->with('error', 'Access Denied: You do not have permission to access this area.');
+            return redirect()->route($redirectRoute)->with('error', 'Access denied: Insufficient permissions.');
         }
 
         return $next($request);
