@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('vehicle_type', 50);
             $table->string('plate_number', 20);
             $table->boolean('is_active')->default(true);
-            $table->point('current_location')->nullable();
+            $table->point('current_location');
             $table->timestamp('location_updated_at')->nullable();
             $table->enum('status', ['offline', 'available', 'on_task', 'on_break'])->default('offline');
             $table->timestamps();

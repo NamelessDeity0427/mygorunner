@@ -13,8 +13,8 @@ return new class extends Migration
             $table->timestamp('check_in');
             $table->timestamp('check_out')->nullable();
             $table->decimal('total_hours', 5, 2)->default(0);
-            $table->point('check_in_location')->nullable();
-            $table->point('check_out_location')->nullable();
+            $table->point('check_in_location');
+            $table->point('check_out_location');
             $table->string('qr_code_hash')->unique()->nullable();
             $table->timestamps();
             $table->index('check_in');

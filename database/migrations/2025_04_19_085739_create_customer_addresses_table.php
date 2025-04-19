@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignUuid('customer_id')->constrained('customers')->onDelete('cascade')->index();
             $table->string('label');
             $table->string('address', 1000);
-            $table->point('location')->nullable();
+            $table->point('location');
             $table->timestamps();
             $table->spatialIndex('location');
         });

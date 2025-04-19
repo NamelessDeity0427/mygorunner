@@ -14,9 +14,9 @@ return new class extends Migration
             $table->foreignUuid('rider_id')->nullable()->constrained('riders')->onDelete('set null');
             $table->enum('service_type', ['food_delivery', 'grocery', 'laundry', 'bills_payment', 'other']);
             $table->text('pickup_address')->nullable();
-            $table->point('pickup_location')->nullable();
+            $table->point('pickup_location');
             $table->text('delivery_address')->nullable();
-            $table->point('delivery_location')->nullable();
+            $table->point('delivery_location');
             $table->text('special_instructions')->nullable();
             $table->string('reference_number', 100)->nullable();
             $table->timestamp('scheduled_at')->nullable();
