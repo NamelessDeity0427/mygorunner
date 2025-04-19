@@ -23,24 +23,9 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\SupportController;
 
 // Public Routes
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::get('/', fn () => view('welcome'))->name('home');
 
-// Dashboard Route for Role-Based Redirection
-Route::middleware('auth')->get('/dashboard', function () {
-    $user = Auth::user();
-    if ($user->hasRole('admin') || $user->hasRole('staff')) {
-        return redirect()->route('admin.dashboard');
-    } elseif ($user->customer) {
-        return redirect()->route('customer.dashboard');
-    } elseif ($user->rider) {
-        return redirect()->route('rider.dashboard');
-    }
-    return redirect()->route('home');
-})->name('dashboard');
-
-// Breeze Authentication Routes
+// Authentication Routes (Breeze)
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store']);
@@ -52,7 +37,20 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
 });
 
+// Authenticated Routes
 Route::middleware('auth')->group(function () {
+    // Dashboard Redirection
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+        return match ($user->user_type) {
+            'admin', 'staff' => redirect()->route('admin.dashboard'),
+            'customer' => redirect()->route('customer.dashboard'),
+            'rider' => redirect()->route('rider.dashboard'),
+            default => redirect()->route('home'),
+        };
+    })->name('dashboard');
+
+    // Authentication Management
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/verify-email', [EmailVerificationPromptController::class, '__invoke'])->name('verification.notice');
     Route::get('/verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
@@ -66,58 +64,71 @@ Route::middleware('auth')->group(function () {
     Route::put('/password', [PasswordController::class, 'update'])->name('password.update');
 
     // Admin/Staff Routes
-    Route::middleware('admin.staff')->group(function () {
-        Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-        Route::get('/admin/attendance', [AdminAttendanceController::class, 'index'])->name('admin.attendance.index');
-        Route::get('/admin/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
-        Route::get('/admin/riders', [RiderManagementController::class, 'index'])->name('admin.riders.index');
-        Route::get('/admin/riders/create', [RiderManagementController::class, 'create'])->name('admin.riders.create');
-        Route::post('/admin/riders', [RiderManagementController::class, 'store'])->name('admin.riders.store');
-        Route::get('/admin/riders/{rider}/edit', [RiderManagementController::class, 'edit'])->name('admin.riders.edit');
-        Route::put('/admin/riders/{rider}', [RiderManagementController::class, 'update'])->name('admin.riders.update');
-        Route::delete('/admin/riders/{rider}', [RiderManagementController::class, 'destroy'])->name('admin.riders.destroy');
-        Route::post('/admin/riders/bulk-update', [RiderManagementController::class, 'bulkUpdate'])->name('admin.riders.bulk-update');
-        Route::post('/admin/riders/{rider}/documents', [RiderManagementController::class, 'storeDocuments'])->name('admin.riders.documents.store');
-        Route::get('/admin/services', [ServiceController::class, 'index'])->name('admin.services.index');
-        Route::get('/admin/services/create', [ServiceController::class, 'create'])->name('admin.services.create');
-        Route::post('/admin/services', [ServiceController::class, 'store'])->name('admin.services.store');
-        Route::get('/admin/services/{service}', [ServiceController::class, 'show'])->name('admin.services.show');
-        Route::get('/admin/services/{service}/edit', [ServiceController::class, 'edit'])->name('admin.services.edit');
-        Route::put('/admin/services/{service}', [ServiceController::class, 'update'])->name('admin.services.update');
-        Route::delete('/admin/services/{service}', [ServiceController::class, 'destroy'])->name('admin.services.destroy');
-        Route::post('/admin/notifications', [NotificationController::class, 'send'])->name('admin.notifications.send');
-        Route::get('/admin/support', [SupportController::class, 'index'])->name('admin.support.index');
+    Route::middleware('role:admin,staff')->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/attendance', [AdminAttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+
+        Route::resource('riders', RiderManagementController::class)->except(['show']);
+        Route::post('/riders/bulk-update', [RiderManagementController::class, 'bulkUpdate'])->name('riders.bulk-update');
+        Route::post('/riders/{rider}/documents', [RiderManagementController::class, 'storeDocuments'])->name('riders.documents.store');
+
+        Route::resource('services', ServiceController::class);
+        Route::post('/notifications', [NotificationController::class, 'send'])->name('notifications.send');
+
+        Route::get('/support', [SupportController::class, 'index'])->name('support.index');
+        Route::get('/support/{supportTicket}', [SupportController::class, 'show'])
+            ->middleware('can:view,supportTicket')
+            ->name('support.show');
+        Route::put('/support/{supportTicket}', [SupportController::class, 'update'])
+            ->middleware('can:update,supportTicket')
+            ->name('support.update');
     });
 
     // Customer Routes
-    Route::middleware('customer')->group(function () {
-        Route::get('/customer/dashboard', [CustomerDashboardController::class, 'index'])->name('customer.dashboard');
-        Route::post('/customer/profile', [CustomerDashboardController::class, 'updateProfile'])->name('customer.profile.update');
-        Route::post('/customer/addresses', [CustomerDashboardController::class, 'storeAddress'])->name('customer.addresses.store');
-        Route::get('/customer/bookings', [BookingController::class, 'index'])->name('customer.bookings.index');
-        Route::get('/customer/bookings/create', [BookingController::class, 'create'])->name('customer.bookings.create');
-        Route::post('/customer/bookings', [BookingController::class, 'store'])->name('customer.bookings.store');
-        Route::post('/customer/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('customer.bookings.cancel');
-        Route::post('/customer/bookings/{booking}/payment', [PaymentController::class, 'process'])->name('customer.bookings.payment');
+    Route::middleware('role:customer')->prefix('customer')->name('customer.')->group(function () {
+        Route::get('/dashboard', [CustomerDashboardController::class, 'index'])->name('dashboard');
+        Route::put('/profile', [CustomerDashboardController::class, 'updateProfile'])->name('profile.update');
+        Route::post('/addresses', [CustomerDashboardController::class, 'storeAddress'])->name('addresses.store');
+
+        Route::get('/bookings', [BookingController::class, 'index'])->name('bookings.index');
+        Route::get('/bookings/create', [BookingController::class, 'create'])->name('bookings.create');
+        Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store');
+        Route::post('/bookings/{booking}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+        Route::post('/bookings/{booking}/payment', [PaymentController::class, 'process'])->name('bookings.payment');
     });
 
     // Rider Routes
-    Route::middleware('rider')->group(function () {
-        Route::get('/rider/dashboard', [RiderDashboardController::class, 'index'])->name('rider.dashboard');
-        Route::post('/rider/bookings/{booking}/accept', [RiderDashboardController::class, 'acceptBooking'])->name('rider.bookings.accept');
-        Route::get('/rider/earnings', [RiderDashboardController::class, 'earnings'])->name('rider.earnings');
-        Route::get('/rider/attendance', [AttendanceController::class, 'index'])->name('rider.attendance.index');
-        Route::post('/rider/attendance/check-in', [AttendanceController::class, 'checkIn'])->name('rider.attendance.check-in');
-        Route::post('/rider/attendance/check-out', [AttendanceController::class, 'checkOut'])->name('rider.attendance.check-out');
-        Route::post('/rider/attendance/start-shift', [AttendanceController::class, 'startShift'])->name('rider.attendance.start-shift');
-        Route::post('/rider/attendance/{attendance}/start-break', [AttendanceController::class, 'startBreak'])->name('rider.attendance.start-break');
-        Route::post('/rider/attendance/{attendance}/end-break', [AttendanceController::class, 'endBreak'])->name('rider.attendance.end-break');
+    Route::middleware('role:rider')->prefix('rider')->name('rider.')->group(function () {
+        Route::get('/dashboard', [RiderDashboardController::class, 'index'])->name('dashboard');
+        Route::post('/bookings/{booking}/accept', [RiderDashboardController::class, 'acceptBooking'])->name('bookings.accept');
+        Route::get('/earnings', [RiderDashboardController::class, 'earnings'])->name('earnings');
+
+        Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])->name('attendance.check-in');
+        Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])->name('attendance.check-out');
+        Route::post('/attendance/start-shift', [AttendanceController::class, 'startShift'])->name('attendance.start-shift');
+        Route::post('/attendance/{attendance}/start-break', [AttendanceController::class, 'startBreak'])->name('attendance.start-break');
+        Route::post('/attendance/{attendance}/end-break', [AttendanceController::class, 'endBreak'])->name('attendance.end-break');
     });
 
-    // Support Routes (accessible to authenticated users)
-    Route::get('/support/create', [SupportController::class, 'create'])->name('support.create');
-    Route::post('/support', [SupportController::class, 'store'])->name('support.store');
+    // Shared Routes
+    Route::prefix('support')->name('support.')->group(function () {
+        Route::get('/create', [SupportController::class, 'create'])
+            ->middleware('role:customer')
+            ->name('create');
+        Route::post('/', [SupportController::class, 'store'])
+            ->middleware('role:customer')
+            ->name('store');
+        Route::get('/{supportTicket}', [SupportController::class, 'show'])
+            ->middleware('can:view,supportTicket')
+            ->name('show');
+        Route::put('/{supportTicket}', [SupportController::class, 'update'])
+            ->middleware('can:update,supportTicket')
+            ->name('update');
+    });
 
-    // Booking Status Update (shared by customers and riders)
-    Route::post('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('bookings.status.update');
+    Route::post('/bookings/{booking}/status', [BookingController::class, 'updateStatus'])
+        ->middleware('can:update,booking')
+        ->name('bookings.status.update');
 });
