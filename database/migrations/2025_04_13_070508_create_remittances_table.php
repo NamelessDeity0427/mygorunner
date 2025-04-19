@@ -10,7 +10,7 @@ return new class extends Migration
         Schema::create('remittances', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('rider_id')->constrained('riders')->onDelete('cascade');
-            $table->foreignUuid('staff_id')->constrained('staff')->onDelete('set null');
+            $table->foreignUuid('staff_id')->nullable()->constrained('staff')->onDelete('set null');
             $table->decimal('amount', 10, 2);
             $table->enum('payment_method', ['cash', 'gcash', 'other']);
             $table->string('reference_number', 100)->nullable();
