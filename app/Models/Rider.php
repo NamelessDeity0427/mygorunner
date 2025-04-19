@@ -1,15 +1,15 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class Rider extends Model
 {
-    use HasUuids, HasFactory, HasSpatial;
+    use HasUuids, HasFactory, HasSpatial, SoftDeletes;
 
     protected $table = 'riders';
     protected $keyType = 'string';
@@ -24,9 +24,6 @@ class Rider extends Model
 
     protected $casts = [
         'current_location' => Point::class,
-        'status' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -52,7 +49,7 @@ class Rider extends Model
 
     public function attendance()
     {
-        return $this->hasMany(Attendance::class, 'user_id', 'id');
+        return $this->hasMany(Attendance::class, 'rider_id', 'id');
     }
 
     public function locationLogs()

@@ -1,17 +1,18 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasUuids, HasApiTokens, HasFactory, Notifiable;
+    use HasUuids, HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
+    protected $table = 'users';
     protected $keyType = 'string';
     public $incrementing = false;
 
@@ -22,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'email_verified_at',
         'phone_verified_at',
+        'user_type',
     ];
 
     protected $hidden = [
@@ -33,9 +35,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'phone_verified_at' => 'datetime',
         'password' => 'hashed',
-        'user_type' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -81,12 +80,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function attendance()
     {
-        return $this->hasMany(Attendance::class, 'user_id', 'id');
+        return $this->hasMany(Attendance::class, 'rider_id', 'id');
     }
 
     public function remittances()
     {
-        return $this->hasMany(Remittance::class, 'processed_by', 'id');
+        return $this->hasMany(Remittance::class, 'staff_id', 'id');
     }
 
     // Scopes
@@ -126,26 +125,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->user_type === 'staff';
     }
 
-    public function isAdmin(): bool
-    {
-        return $this->user_type === 'admin';
-    }
-
     public function isStaffOrAdmin(): bool
     {
-        return $this->isStaff() || $this->isAdmin();
-    }
-
-    public function getFullNameAttribute(): string
-    {
-        return $this->name;
+        return $this->isStaff() || $this->user_type === 'admin';
     }
 
     // Boot method for event listeners
     protected static function boot()
     {
         parent::boot();
-
         static::creating(function ($user) {
             if (!$user->user_type) {
                 $user->user_type = 'customer';

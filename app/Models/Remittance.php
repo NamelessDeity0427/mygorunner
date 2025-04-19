@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Remittance extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'remittances';
     protected $keyType = 'string';
@@ -15,7 +15,7 @@ class Remittance extends Model
 
     protected $fillable = [
         'rider_id',
-        'processed_by',
+        'staff_id',
         'amount',
         'payment_method',
         'status',
@@ -23,9 +23,6 @@ class Remittance extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'status' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -36,7 +33,7 @@ class Remittance extends Model
 
     public function processedBy()
     {
-        return $this->belongsTo(Staff::class, 'processed_by', 'id');
+        return $this->belongsTo(Staff::class, 'staff_id', 'id');
     }
 
     public function details()
@@ -52,7 +49,7 @@ class Remittance extends Model
 
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', 'verified');
     }
 
     // Helper Methods

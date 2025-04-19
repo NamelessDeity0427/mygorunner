@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BookingStatusHistory extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'booking_status_history';
     protected $keyType = 'string';
@@ -18,12 +18,6 @@ class BookingStatusHistory extends Model
         'status',
         'notes',
         'created_by',
-    ];
-
-    protected $casts = [
-        'status' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships

@@ -1,15 +1,18 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Cache;
 
 class SystemSetting extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUuids, SoftDeletes;
 
     protected $table = 'system_settings';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
     protected $fillable = [
         'key',
@@ -18,8 +21,6 @@ class SystemSetting extends Model
 
     protected $casts = [
         'value' => 'json',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Retrieve a setting's value

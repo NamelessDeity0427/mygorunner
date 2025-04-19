@@ -1,15 +1,15 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class Booking extends Model
 {
-    use HasUuids, HasFactory, HasSpatial;
+    use HasUuids, HasFactory, HasSpatial, SoftDeletes;
 
     protected $table = 'bookings';
     protected $keyType = 'string';
@@ -19,22 +19,21 @@ class Booking extends Model
         'customer_id',
         'rider_id',
         'service_type',
+        'pickup_address',
         'pickup_location',
+        'delivery_address',
         'delivery_location',
+        'special_instructions',
         'status',
-        'estimated_time',
-        'distance',
-        'notes',
+        'estimated_distance',
+        'estimated_duration',
     ];
 
     protected $casts = [
         'pickup_location' => Point::class,
         'delivery_location' => Point::class,
-        'estimated_time' => 'datetime',
-        'distance' => 'decimal:2',
-        'status' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'estimated_distance' => 'decimal:2',
+        'estimated_duration' => 'decimal:2',
     ];
 
     // Relationships
@@ -81,7 +80,7 @@ class Booking extends Model
 
     public function scopeInProgress($query)
     {
-        return $query->where('status', 'in_progress');
+        return $query->whereIn('status', ['accepted', 'assigned', 'at_pickup', 'picked_up', 'on_the_way', 'at_delivery']);
     }
 
     public function scopeCompleted($query)
@@ -108,7 +107,7 @@ class Booking extends Model
     public function calculateTotalAmount(): float
     {
         return $this->items->sum(function ($item) {
-            return $item->quantity * $item->price;
+            return $item->quantity * ($item->price ?? 0);
         });
     }
 
@@ -122,7 +121,6 @@ class Booking extends Model
     protected static function boot()
     {
         parent::boot();
-
         static::created(function ($booking) {
             BookingStatusHistory::create([
                 'booking_id' => $booking->id,
@@ -130,7 +128,6 @@ class Booking extends Model
                 'notes' => 'Booking created',
             ]);
         });
-
         static::updated(function ($booking) {
             if ($booking->isDirty('status')) {
                 BookingStatusHistory::create([

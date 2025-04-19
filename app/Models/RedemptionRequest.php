@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RedemptionRequest extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'redemption_requests';
     protected $keyType = 'string';
@@ -15,17 +15,14 @@ class RedemptionRequest extends Model
 
     protected $fillable = [
         'rider_id',
-        'amount',
+        'requested_amount',
         'payment_method',
         'status',
         'processed_by',
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'status' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'requested_amount' => 'decimal:2',
     ];
 
     // Relationships

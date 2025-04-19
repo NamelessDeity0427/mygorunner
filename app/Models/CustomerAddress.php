@@ -1,22 +1,34 @@
 <?php
 namespace App\Models;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use MatanYadaev\EloquentSpatial\SpatialTrait;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
+use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class CustomerAddress extends Model
 {
-    use SpatialTrait;
+    use HasUuids, HasFactory, HasSpatial, SoftDeletes;
 
-    protected $fillable = ['customer_id', 'label', 'address', 'location'];
+    protected $table = 'customer_addresses';
+    protected $keyType = 'string';
+    public $incrementing = false;
 
-    protected $spatialFields = ['location'];
+    protected $fillable = [
+        'customer_id',
+        'label',
+        'address',
+        'location',
+    ];
 
-    /**
-     * Get the customer that owns the address.
-     */
+    protected $spatialFields = [
+        'location',
+    ];
+
+    // Relationships
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class, 'customer_id', 'id');
     }
 }

@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CustomerFeedback extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'customer_feedback';
     protected $keyType = 'string';
@@ -22,8 +22,6 @@ class CustomerFeedback extends Model
 
     protected $casts = [
         'rating' => 'integer',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -52,7 +50,7 @@ class CustomerFeedback extends Model
     public static function averageRatingForRider($riderId): float
     {
         return self::whereHas('booking', function ($query) use ($riderId) {
-            $query->where('rider_id', $riderId);
+            $query->where('rider_id', $riderId)->whereNotNull('rider_id');
         })->avg('rating') ?? 0.0;
     }
 }

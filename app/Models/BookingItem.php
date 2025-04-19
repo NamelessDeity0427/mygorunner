@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BookingItem extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'booking_items';
     protected $keyType = 'string';
@@ -15,7 +15,7 @@ class BookingItem extends Model
 
     protected $fillable = [
         'booking_id',
-        'item_name',
+        'name',
         'quantity',
         'price',
     ];
@@ -23,8 +23,6 @@ class BookingItem extends Model
     protected $casts = [
         'quantity' => 'integer',
         'price' => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -36,7 +34,7 @@ class BookingItem extends Model
     // Accessor for subtotal
     public function getSubtotalAttribute(): float
     {
-        return $this->quantity * $this->price;
+        return $this->quantity * ($this->price ?? 0);
     }
 
     // Scopes

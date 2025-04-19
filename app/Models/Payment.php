@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Payment extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'payments';
     protected $keyType = 'string';
@@ -19,14 +19,11 @@ class Payment extends Model
         'payment_method',
         'status',
         'processed_by',
-        'transaction_id',
+        'reference_number',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'status' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -48,15 +45,15 @@ class Payment extends Model
 
     public function scopeCompleted($query)
     {
-        return $query->where('status', 'completed');
+        return $query->where('status', 'paid');
     }
 
     // Helper Methods
-    public function markAsCompleted($transactionId = null): void
+    public function markAsCompleted($referenceNumber = null): void
     {
         $this->update([
-            'status' => 'completed',
-            'transaction_id' => $transactionId ?? $this->transaction_id,
+            'status' => 'paid',
+            'reference_number' => $referenceNumber ?? $this->reference_number,
         ]);
     }
 

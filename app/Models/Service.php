@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Service extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'services';
     protected $keyType = 'string';
@@ -18,13 +18,11 @@ class Service extends Model
         'description',
         'price',
         'category',
-        'image',
+        'image_path',
     ];
 
     protected $casts = [
         'price' => 'decimal:2',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Scopes
@@ -41,6 +39,6 @@ class Service extends Model
     // Helper Methods
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image ? asset('storage/' . $this->image) : null;
+        return $this->image_path ? asset('storage/' . $this->image_path) : null;
     }
 }

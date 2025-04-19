@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class RiderEarning extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'rider_earnings';
     protected $keyType = 'string';
@@ -17,15 +17,14 @@ class RiderEarning extends Model
         'rider_id',
         'booking_id',
         'amount',
-        'earning_type',
+        'type',
         'status',
+        'cleared_at',
     ];
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'status' => 'string',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'cleared_at' => 'datetime',
     ];
 
     // Relationships

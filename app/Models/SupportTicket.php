@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SupportTicket extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'support_tickets';
     protected $keyType = 'string';
@@ -25,10 +25,7 @@ class SupportTicket extends Model
     ];
 
     protected $casts = [
-        'status' => 'string',
         'resolved_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -83,13 +80,11 @@ class SupportTicket extends Model
     protected static function boot()
     {
         parent::boot();
-
         static::creating(function ($ticket) {
             if (!$ticket->ticket_number) {
-                $ticket->ticket_number = 'TICKET-' . str_pad(static::count() + 1, 6, '0', STR_PAD_LEFT);
+                $ticket->ticket_number = 'TICKET-' . now()->format('YmdHis') . '-' . str_pad(static::count() + 1, 6, '0', STR_PAD_LEFT);
             }
         });
-
         static::updating(function ($ticket) {
             if ($ticket->isDirty('status') && $ticket->status === 'resolved') {
                 $ticket->resolved_at = now();

@@ -1,15 +1,15 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
 class LocationLog extends Model
 {
-    use HasUuids, HasFactory, HasSpatial;
+    use HasUuids, HasFactory, HasSpatial, SoftDeletes;
 
     protected $table = 'location_logs';
     protected $keyType = 'string';
@@ -23,8 +23,6 @@ class LocationLog extends Model
 
     protected $casts = [
         'location' => Point::class,
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships

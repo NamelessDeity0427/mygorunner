@@ -1,13 +1,13 @@
 <?php
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
-    use HasUuids, HasFactory;
+    use HasUuids, HasFactory, SoftDeletes;
 
     protected $table = 'customers';
     protected $keyType = 'string';
@@ -15,14 +15,11 @@ class Customer extends Model
 
     protected $fillable = [
         'user_id',
-        'address',
         'preferences',
     ];
 
     protected $casts = [
         'preferences' => 'array',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
     ];
 
     // Relationships
@@ -50,7 +47,7 @@ class Customer extends Model
     // Helper Methods
     public function getDefaultAddressAttribute(): ?string
     {
-        return $this->address ?? $this->user->email;
+        return $this->addresses()->first()?->address;
     }
 
     public function updatePreferences(array $preferences): void
