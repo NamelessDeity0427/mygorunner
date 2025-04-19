@@ -4,17 +4,31 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-// Added for spatial integration
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+// Spatial integration
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
 /**
- * @property Point $default_location // Added property hint
+ * @property Point|null $default_location // Updated property hint for nullability
  */
 class Customer extends Model
 {
-    use HasFactory;
-    use HasSpatial; // Added trait
+    use HasUuids, HasFactory, HasSpatial; // Added HasUuids and HasSpatial
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
@@ -22,11 +36,9 @@ class Customer extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'user_id', // [cite: 86]
-        'address', // [cite: 86]
-        // 'default_lat', // [cite: 86] Removed
-        // 'default_lng', // [cite: 86] Removed
-        'default_location', // Added spatial field
+        'user_id',
+        'address',
+        'default_location', // Spatial field
     ];
 
     /**
@@ -35,25 +47,27 @@ class Customer extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        // 'default_lat' => 'decimal:8', // [cite: 88] Removed
-        // 'default_lng' => 'decimal:8', // [cite: 88] Removed
-        'default_location' => Point::class, // Added spatial cast
+        'default_location' => Point::class, // Spatial cast
     ];
+
+    // --- Relationships ---
 
     /**
      * Get the user that owns the customer profile.
      */
     public function user()
     {
-        return $this->belongsTo(User::class); // [cite: 89]
+        // Foreign key 'user_id' relates to User 'id' (UUID)
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
-     * Get the bookings for the customer.
+     * Get the bookings made by the customer.
      */
     public function bookings()
     {
-        return $this->hasMany(Booking::class); // [cite: 90]
+        // Foreign key 'customer_id' relates to Booking 'id' (UUID)
+        return $this->hasMany(Booking::class, 'customer_id', 'id');
     }
 
     /**
@@ -61,7 +75,7 @@ class Customer extends Model
      */
     public function feedback()
     {
-        // Ensure CustomerFeedback model exists or correct the class name
-        return $this->hasMany(CustomerFeedback::class); // [cite: 91]
+        // Foreign key 'customer_id' relates to CustomerFeedback 'id' (UUID)
+        return $this->hasMany(CustomerFeedback::class, 'customer_id', 'id');
     }
 }

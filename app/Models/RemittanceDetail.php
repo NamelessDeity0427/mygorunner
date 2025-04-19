@@ -4,10 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class RemittanceDetail extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
+
+    protected $table = 'remittance_details'; // Explicit table name
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
@@ -17,7 +34,7 @@ class RemittanceDetail extends Model
     protected $fillable = [
         'remittance_id',
         'booking_id',
-        'amount',
+        'amount', // Portion of booking amount in this remittance
     ];
 
     /**
@@ -29,12 +46,14 @@ class RemittanceDetail extends Model
         'amount' => 'decimal:2',
     ];
 
+    // --- Relationships ---
+
     /**
      * Get the parent remittance record.
      */
     public function remittance()
     {
-        return $this->belongsTo(Remittance::class);
+        return $this->belongsTo(Remittance::class, 'remittance_id', 'id');
     }
 
     /**
@@ -42,6 +61,6 @@ class RemittanceDetail extends Model
      */
     public function booking()
     {
-        return $this->belongsTo(Booking::class);
+        return $this->belongsTo(Booking::class, 'booking_id', 'id');
     }
 }

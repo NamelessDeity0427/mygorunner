@@ -4,22 +4,43 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-// Added for spatial integration
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+// Spatial integration
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
 /**
- * @property Point $location // Added property hint
- * @property \Illuminate\Support\Carbon|null $created_at // Added hint
+ * @property Point $location // Spatial point
+ * @property \Illuminate\Support\Carbon|null $created_at
  */
 class LocationLog extends Model
 {
-    use HasFactory;
-    use HasSpatial; // Added trait
+    use HasUuids, HasFactory, HasSpatial; // Added HasUuids and HasSpatial
 
-    // Disable updated_at timestamp as it's not in the migration [cite: 158]
-    public $timestamps = ["created_at"]; // [cite: 159] Only enable created_at
-    const UPDATED_AT = null; // [cite: 159] Explicitly disable updated_at
+    protected $table = 'location_logs'; // Explicit table name
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * Indicates if the model should be timestamped. Only 'created_at'.
+     *
+     * @var bool
+     */
+    public $timestamps = true; // Manages created_at
+
+    const UPDATED_AT = null; // Disable updated_at
 
     /**
      * The attributes that are mass assignable.
@@ -27,11 +48,9 @@ class LocationLog extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'user_id', // [cite: 160]
-        'booking_id', // [cite: 160]
-        // 'lat', // [cite: 160] Removed
-        // 'lng', // [cite: 160] Removed
-        'location', // Added spatial field
+        'user_id', // User (Rider/Customer) whose location it is
+        'booking_id', // Optional associated booking
+        'location', // Spatial field
     ];
 
     /**
@@ -40,18 +59,18 @@ class LocationLog extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        // 'lat' => 'decimal:8', // [cite: 162] Removed
-        // 'lng' => 'decimal:8', // [cite: 162] Removed
-        'location' => Point::class, // Added spatial cast
-        'created_at' => 'datetime', // [cite: 162]
+        'location' => Point::class, // Spatial cast
+        'created_at' => 'datetime',
     ];
+
+    // --- Relationships ---
 
     /**
      * Get the user whose location was logged.
      */
     public function user()
     {
-        return $this->belongsTo(User::class); // [cite: 163]
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
@@ -59,6 +78,6 @@ class LocationLog extends Model
      */
     public function booking()
     {
-        return $this->belongsTo(Booking::class); // [cite: 164]
+        return $this->belongsTo(Booking::class, 'booking_id', 'id');
     }
 }

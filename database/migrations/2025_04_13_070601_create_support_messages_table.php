@@ -12,14 +12,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('support_messages', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('ticket_id')->constrained('support_tickets')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users'); // User who wrote the message
-            $table->text('message');
-            $table->timestamp('created_at')->nullable(); // Only created_at needed
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for foreign keys
+            $table->foreignUuid('ticket_id')->constrained('support_tickets')->onDelete('cascade'); // [cite: 152]
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade'); // User who wrote (Customer or Staff) [cite: 152]
+            $table->text('message'); // [cite: 152]
+            $table->timestamp('created_at')->useCurrent(); // [cite: 152]
 
-            // Index
-            $table->index('created_at', 'idx_support_messages_created_at');
+            // Index [cite: 152]
+            $table->index('created_at');
         });
     }
 

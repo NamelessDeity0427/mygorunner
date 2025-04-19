@@ -12,22 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('location_logs', function (Blueprint $table) {
-            $table->id(); // [cite: 57]
-            $table->foreignId('user_id')->constrained('users'); // User whose location it is (rider or customer) [cite: 58]
-            $table->foreignId('booking_id')->nullable()->constrained('bookings')->onDelete('set null'); // Link location to a specific booking if applicable [cite: 58]
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id() [cite: 139]
+            // Use foreignUuid for foreign keys
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade'); // User (Rider/Customer) [cite: 139]
+            $table->foreignUuid('booking_id')->nullable()->constrained('bookings')->onDelete('set null'); // Associated booking, if any [cite: 139]
+            $table->point('location'); // Spatial column [cite: 139]
+            $table->timestamp('created_at')->useCurrent(); // Log time [cite: 139]
 
-            // Replace lat and lng with a single point column
-            // $table->decimal('lat', 10, 8); // [cite: 59] Removed
-            // $table->decimal('lng', 11, 8); // [cite: 59] Removed
-            $table->point('location'); // Added spatial column
-
-            $table->timestamp('created_at')->nullable(); // Only created_at needed [cite: 59]
-
-            // Indexes
-            // $table->index(['lat', 'lng'], 'idx_location_logs_location'); // [cite: 60] Removed
-            $table->spatialIndex('location'); // Added spatial index
-            $table->index('created_at', 'idx_location_logs_created_at'); // [cite: 60]
+            // Indexes [cite: 139]
+            $table->index('created_at');
+            // Add spatial index if needed and supported [cite: 139]
+            // $table->spatialIndex('location');
         });
+
+        // Add spatial index separately if needed
+        // DB::statement('ALTER TABLE location_logs ADD SPATIAL INDEX(location);');
     }
 
     /**
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('location_logs'); // [cite: 61]
+        Schema::dropIfExists('location_logs');
     }
 };

@@ -12,11 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('remittance_details', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('remittance_id')->constrained('remittances')->onDelete('cascade');
-            $table->foreignId('booking_id')->constrained('bookings'); // Link remittance to specific booking payment remitted
-            $table->decimal('amount', 10, 2); // The portion of the booking amount included in this remittance
-            $table->timestamps();
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for foreign keys
+            $table->foreignUuid('remittance_id')->constrained('remittances')->onDelete('cascade'); // Link to parent remittance [cite: 136]
+            $table->foreignUuid('booking_id')->constrained('bookings')->onDelete('cascade'); // Link to the specific booking being remitted [cite: 136] - Cascade ok? Maybe set null if booking deleted?
+            $table->decimal('amount', 10, 2); // The portion of the booking payment included in this remittance [cite: 136]
+            $table->timestamps(); // No need for timestamps? Maybe just created_at [cite: 136] - Kept for now
         });
     }
 

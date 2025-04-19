@@ -12,11 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('system_settings', function (Blueprint $table) {
-            $table->id();
-            $table->string('key')->unique();
-            $table->text('value');
-            $table->timestamps();
+            $table->id(); // Standard ID is fine here
+            $table->string('key')->unique(); // Setting name (e.g., 'service_fee_per_km') [cite: 155]
+            $table->text('value'); // Setting value [cite: 155]
+            $table->timestamps(); // [cite: 155]
         });
+
+        // Add default settings if needed
+        // DB::table('system_settings')->insert(['key' => 'base_delivery_fee', 'value' => '50.00', 'created_at' => now(), 'updated_at' => now()]);
     }
 
     /**

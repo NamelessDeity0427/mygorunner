@@ -152,8 +152,8 @@ Route::get('/', function () {
         }
     }
     // If not logged in, show the welcome/landing page or redirect to login
-    // return view('welcome');
-     return redirect()->route('login'); // Redirect guests directly to login
+     return view('welcome');
+    // return redirect()->route('login'); // Redirect guests directly to login
 });
 
 // --- Optional: Catch-all for undefined routes ---

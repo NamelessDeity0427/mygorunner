@@ -12,15 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('services', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->string('image_path')->nullable();
-            $table->decimal('price', 10, 2)->nullable(); // Price if applicable
-            $table->string('category')->nullable(); // e.g., food, errand
-            $table->boolean('is_active')->default(true);
-            $table->timestamps();
-            $table->index('is_active');
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            $table->string('name'); // [cite: 165]
+            $table->text('description')->nullable(); // [cite: 165]
+            $table->string('image_path')->nullable(); // [cite: 165]
+            $table->decimal('price', 10, 2)->nullable(); // Standard price, if applicable [cite: 165]
+            $table->string('category')->nullable(); // e.g., food, errand, documents [cite: 165]
+            $table->boolean('is_active')->default(true); // [cite: 165]
+            $table->timestamps(); // [cite: 165]
+
+            $table->index('is_active'); // [cite: 165]
+            $table->index('category');
         });
     }
 

@@ -12,17 +12,19 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('customer_feedback', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('booking_id')->constrained('bookings');
-            $table->foreignId('customer_id')->constrained('customers');
-            $table->foreignId('rider_id')->constrained('riders');
-            $table->integer('rating'); // Assuming integer rating (e.g., 1-5)
-            $table->text('comments')->nullable();
-            $table->timestamps();
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for foreign keys
+            $table->foreignUuid('booking_id')->constrained('bookings')->onDelete('cascade'); // [cite: 147]
+            $table->foreignUuid('customer_id')->constrained('customers')->onDelete('cascade'); // [cite: 147]
+            $table->foreignUuid('rider_id')->constrained('riders')->onDelete('cascade'); // [cite: 147] - Cascade ok? Maybe set null?
+            $table->unsignedTinyInteger('rating'); // 1-5 rating [cite: 147]
+            $table->text('comments')->nullable(); // [cite: 147]
+            $table->timestamps(); // [cite: 147]
 
-            // Indexes
-            $table->index('rating', 'idx_customer_feedback_rating');
-            $table->index('created_at', 'idx_customer_feedback_created_at');
+            // Indexes [cite: 148]
+            $table->index('rating');
+            $table->index('created_at');
         });
     }
 

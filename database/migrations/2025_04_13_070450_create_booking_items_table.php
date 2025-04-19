@@ -12,15 +12,17 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('booking_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('booking_id')->constrained('bookings')->onDelete('cascade');
-            $table->string('name');
-            $table->integer('quantity')->default(1);
-            $table->text('notes')->nullable();
-            $table->decimal('price', 10, 2)->nullable();
-            $table->timestamps();
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for the foreign key
+            $table->foreignUuid('booking_id')->constrained('bookings')->onDelete('cascade'); // Changed from foreignId() [cite: 124]
+            $table->string('name'); // [cite: 125]
+            $table->integer('quantity')->default(1); // [cite: 125]
+            $table->text('notes')->nullable(); // [cite: 125]
+            $table->decimal('price', 10, 2)->nullable(); // Price per item, if known [cite: 125]
+            $table->timestamps(); // [cite: 125]
 
-            $table->index('name', 'idx_booking_items_name');
+            $table->index('name'); // [cite: 125]
         });
     }
 

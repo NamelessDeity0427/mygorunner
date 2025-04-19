@@ -12,28 +12,30 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('riders', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->text('address');
-            $table->string('vehicle_type', 50);
-            $table->string('plate_number', 20);
-            $table->boolean('is_active')->default(true);
-
-            // Changed: Removed ->nullable() to allow spatial index
-            // If a rider *must* have a location when active, this makes sense.
-            // Consider application logic for offline riders if needed.
-            $table->point('current_location'); // Spatial column must be NOT NULL for index
-
-            $table->timestamp('location_updated_at')->nullable();
-            $table->enum('status', ['offline', 'available', 'on_task', 'on_break'])->default('offline');
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for the foreign key
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade'); // Changed from foreignId() [cite: 108]
+            $table->text('address'); // [cite: 108]
+            $table->string('vehicle_type', 50); // [cite: 108]
+            $table->string('plate_number', 20); // [cite: 108]
+            $table->boolean('is_active')->default(true); // [cite: 108]
+            // Spatial column (Point) for current location, made nullable [cite: 108, 161]
+            $table->point('current_location')->nullable();
+            $table->timestamp('location_updated_at')->nullable(); // [cite: 108]
+            $table->enum('status', ['offline', 'available', 'on_task', 'on_break'])->default('offline'); // [cite: 108]
             $table->timestamps();
 
-            // Indexes
-            $table->index('status', 'idx_riders_status');
-            $table->index('is_active', 'idx_riders_is_active');
-            // $table->spatialIndex('current_location'); // Add spatial index (Now possible)
-            $table->index('location_updated_at', 'idx_riders_location_time');
+            // Indexes [cite: 108]
+            $table->index('status');
+            $table->index('is_active');
+            $table->index('location_updated_at');
+            // Add spatial index if needed and supported [cite: 108]
+            // $table->spatialIndex('current_location'); // Enable if using MySQL >= 5.7.5 or PostGIS
         });
+
+        // Add spatial index separately if needed
+        // DB::statement('ALTER TABLE riders ADD SPATIAL INDEX(current_location);');
     }
 
     /**

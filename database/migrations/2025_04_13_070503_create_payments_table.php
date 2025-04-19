@@ -12,23 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('payments', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('booking_id')->constrained('bookings');
-            $table->decimal('amount', 10, 2);
-            $table->enum('payment_method', ['cash', 'gcash', 'other']);
-            $table->string('reference_number', 100)->nullable();
-            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending');
-            $table->foreignId('collected_by')->nullable()->constrained('users'); // User (likely rider) who collected
-            $table->timestamp('collected_at')->nullable();
-            $table->timestamps();
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for foreign keys
+            $table->foreignUuid('booking_id')->constrained('bookings')->onDelete('cascade'); // Link to booking [cite: 130]
+            $table->decimal('amount', 10, 2); // [cite: 130]
+            $table->enum('payment_method', ['cash', 'gcash', 'card', 'other']); // Added 'card' [cite: 130]
+            $table->string('reference_number', 100)->nullable(); // For GCash/Card/etc. [cite: 130]
+            $table->enum('status', ['pending', 'paid', 'failed', 'refunded'])->default('pending'); // [cite: 130]
+            // User (Rider or potentially Staff/Admin) who handled the payment record
+            $table->foreignUuid('processed_by')->nullable()->constrained('users')->onDelete('set null'); // Renamed from collected_by for clarity [cite: 130]
+            $table->timestamp('paid_at')->nullable(); // Renamed from collected_at [cite: 130]
+            $table->timestamps(); // created_at, updated_at [cite: 130]
 
-            // Indexes
-            $table->index('status', 'idx_payments_status');
-            $table->index('payment_method', 'idx_payments_payment_method');
-            $table->index('reference_number', 'idx_payments_reference_number');
-            $table->index('collected_at', 'idx_payments_collected_at');
-            $table->index('created_at', 'idx_payments_created_at');
-
+            // Indexes [cite: 130]
+            $table->index('status');
+            $table->index('payment_method');
+            $table->index('reference_number');
+            $table->index('paid_at'); // Renamed index
+            $table->index('created_at');
         });
     }
 

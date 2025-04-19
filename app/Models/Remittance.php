@@ -4,23 +4,39 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class Remittance extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
+     * 'status', 'amount', 'staff_id' should be set explicitly during processing.
      *
      * @var array<int, string>
      */
     protected $fillable = [
         'rider_id',
-        'staff_id',
+        'staff_id', // Staff who verified
         'amount',
-        'payment_method',
+        'payment_method', // How rider paid staff
         'reference_number',
-        'notes',
+        'notes', // Staff notes
         'status',
     ];
 
@@ -35,12 +51,14 @@ class Remittance extends Model
         'status' => 'string', // Cast enum
     ];
 
+    // --- Relationships ---
+
     /**
      * Get the rider who made the remittance.
      */
     public function rider()
     {
-        return $this->belongsTo(Rider::class);
+        return $this->belongsTo(Rider::class, 'rider_id', 'id');
     }
 
     /**
@@ -48,7 +66,7 @@ class Remittance extends Model
      */
     public function staff()
     {
-        return $this->belongsTo(Staff::class);
+        return $this->belongsTo(Staff::class, 'staff_id', 'id');
     }
 
     /**
@@ -56,6 +74,6 @@ class Remittance extends Model
      */
     public function details()
     {
-        return $this->hasMany(RemittanceDetail::class);
+        return $this->hasMany(RemittanceDetail::class, 'remittance_id', 'id');
     }
 }

@@ -4,14 +4,36 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class SupportMessage extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
 
-    // Disable updated_at timestamp as it's not in the migration
-    public $timestamps = ["created_at"]; // Only enable created_at
-    const UPDATED_AT = null; // Explicitly disable updated_at
+    protected $table = 'support_messages'; // Explicit table name
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * Indicates if the model should be timestamped. Only 'created_at'.
+     *
+     * @var bool
+     */
+    public $timestamps = true; // Manages created_at
+
+    const UPDATED_AT = null; // Disable updated_at
 
     /**
      * The attributes that are mass assignable.
@@ -20,11 +42,11 @@ class SupportMessage extends Model
      */
     protected $fillable = [
         'ticket_id',
-        'user_id',
+        'user_id', // User who wrote the message
         'message',
     ];
 
-     /**
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
@@ -33,12 +55,14 @@ class SupportMessage extends Model
         'created_at' => 'datetime',
     ];
 
+    // --- Relationships ---
+
     /**
      * Get the support ticket that the message belongs to.
      */
     public function ticket()
     {
-        return $this->belongsTo(SupportTicket::class, 'ticket_id');
+        return $this->belongsTo(SupportTicket::class, 'ticket_id', 'id');
     }
 
     /**
@@ -46,6 +70,6 @@ class SupportMessage extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

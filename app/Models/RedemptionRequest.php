@@ -5,30 +5,41 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class RedemptionRequest extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
+
+    protected $table = 'redemption_requests'; // Explicit table name
 
     /**
-     * The table associated with the model.
+     * The primary key type.
      *
      * @var string
      */
-    protected $table = 'redemption_requests'; // Explicitly define table name
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
+     * 'status', 'processed_by', 'processed_at' should be set explicitly.
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'rider_id', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
-        'requested_amount', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
-        'status', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
-        'processed_by', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
-        'processed_at', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
-        'notes', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
+        'rider_id',
+        'requested_amount',
+        'status',
+        'processed_by', // Staff ID (UUID)
+        'processed_at',
+        'notes', // Admin/Staff notes
     ];
 
     /**
@@ -37,25 +48,28 @@ class RedemptionRequest extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'requested_amount' => 'decimal:2', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
-        'processed_at' => 'datetime', // [cite: MIGRATION_TABLES.pdf] (Based on create_redemption_requests_table migration)
+        'requested_amount' => 'decimal:2',
+        'processed_at' => 'datetime',
         'status' => 'string', // Cast enum
     ];
+
+    // --- Relationships ---
 
     /**
      * Get the rider who made the redemption request.
      */
     public function rider(): BelongsTo
     {
-        return $this->belongsTo(Rider::class);
+        return $this->belongsTo(Rider::class, 'rider_id', 'id');
     }
 
     /**
      * Get the staff member who processed the request.
+     * Renamed from processor.
      */
-    public function processor(): BelongsTo
+    public function processedByStaff(): BelongsTo
     {
-        // Assuming 'processed_by' stores the staff ID, adjust if it stores user_id
-        return $this->belongsTo(Staff::class, 'processed_by');
+        // 'processed_by' links to Staff 'id' (UUID)
+        return $this->belongsTo(Staff::class, 'processed_by', 'id');
     }
 }

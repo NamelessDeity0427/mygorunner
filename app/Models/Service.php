@@ -4,13 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class Service extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
+     * 'is_active' might be controlled explicitly.
      *
      * @var array<int, string>
      */
@@ -18,9 +34,9 @@ class Service extends Model
         'name',
         'description',
         'image_path',
-        'price', // [cite: MIGRATION_TABLES.pdf] (Based on create_services_table migration)
-        'category', // [cite: MIGRATION_TABLES.pdf] (Based on create_services_table migration)
-        'is_active', // [cite: MIGRATION_TABLES.pdf] (Based on create_services_table migration)
+        'price',
+        'category',
+        'is_active',
     ];
 
     /**
@@ -29,16 +45,13 @@ class Service extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'price' => 'decimal:2', // [cite: MIGRATION_TABLES.pdf] (Based on create_services_table migration)
-        'is_active' => 'boolean', // [cite: MIGRATION_TABLES.pdf] (Based on create_services_table migration)
+        'price' => 'decimal:2',
+        'is_active' => 'boolean',
     ];
 
-    // Add relationships here if a Service is linked to other models (e.g., bookings)
-    // Example:
+    // Add relationships if needed (e.g., if Bookings directly reference a Service)
     // public function bookings()
     // {
-    //     // Assuming a booking might reference a standard service item
-    //     // This relationship depends on how you link services to bookings
-    //     // return $this->hasMany(Booking::class); // Or perhaps through BookingItem
+    //     // Example: return $this->hasMany(Booking::class);
     // }
 }

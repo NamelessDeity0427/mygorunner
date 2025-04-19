@@ -12,15 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('redemption_requests', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('rider_id')->constrained('riders')->onDelete('cascade');
-            $table->decimal('requested_amount', 10, 2);
-            $table->enum('status', ['pending', 'approved', 'rejected', 'paid'])->default('pending');
-            $table->foreignId('processed_by')->nullable()->constrained('staff')->onDelete('set null'); // staff user_id
-            $table->timestamp('processed_at')->nullable();
-            $table->text('notes')->nullable(); // Admin notes
-            $table->timestamps(); // requested_at is created_at
-            $table->index('status');
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for foreign keys
+            $table->foreignUuid('rider_id')->constrained('riders')->onDelete('cascade'); // [cite: 171]
+            $table->decimal('requested_amount', 10, 2); // [cite: 171]
+            $table->enum('status', ['pending', 'approved', 'rejected', 'paid'])->default('pending'); // [cite: 171]
+            $table->foreignUuid('processed_by')->nullable()->constrained('staff')->onDelete('set null'); // Staff who processed [cite: 171]
+            $table->timestamp('processed_at')->nullable(); // [cite: 171]
+            $table->text('notes')->nullable(); // Admin/Staff notes (e.g., rejection reason) [cite: 171]
+            $table->timestamps(); // requested_at is created_at [cite: 171]
+
+            $table->index('status'); // [cite: 171]
         });
     }
 

@@ -4,25 +4,43 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class SupportTicket extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
+
+    protected $table = 'support_tickets'; // Explicit table name
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
+     * 'ticket_number', 'status', 'assigned_to', 'resolved_at' should be set explicitly.
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'ticket_number',
-        'user_id', // Creator
-        'booking_id',
+        'ticket_number', // Usually generated automatically
+        'user_id', // Creator (Customer/Rider/Staff/Admin)
+        'booking_id', // Optional associated booking
         'subject',
         'description',
-        'status',
-        'assigned_to', // Staff ID
-        'resolved_at',
+        // 'status', // Managed explicitly
+        // 'assigned_to', // Staff ID (UUID) - Assigned explicitly
+        // 'resolved_at', // Set explicitly
     ];
 
     /**
@@ -35,12 +53,14 @@ class SupportTicket extends Model
         'resolved_at' => 'datetime',
     ];
 
+    // --- Relationships ---
+
     /**
      * Get the user who created the support ticket.
      */
     public function creator()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
@@ -48,7 +68,7 @@ class SupportTicket extends Model
      */
     public function booking()
     {
-        return $this->belongsTo(Booking::class);
+        return $this->belongsTo(Booking::class, 'booking_id', 'id');
     }
 
     /**
@@ -56,7 +76,7 @@ class SupportTicket extends Model
      */
     public function assignee()
     {
-        return $this->belongsTo(Staff::class, 'assigned_to');
+        return $this->belongsTo(Staff::class, 'assigned_to', 'id');
     }
 
     /**
@@ -64,6 +84,6 @@ class SupportTicket extends Model
      */
     public function messages()
     {
-        return $this->hasMany(SupportMessage::class, 'ticket_id')->orderBy('created_at');
+        return $this->hasMany(SupportMessage::class, 'ticket_id', 'id')->orderBy('created_at', 'asc'); // Order messages chronologically
     }
 }

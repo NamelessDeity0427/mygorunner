@@ -12,16 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('staff', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('position', 100);
-            $table->boolean('is_dispatcher')->default(false);
-            $table->boolean('is_admin')->default(false);
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            // Use foreignUuid for the foreign key
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade'); // Changed from foreignId() [cite: 111]
+            $table->string('position', 100); // [cite: 111]
+            $table->boolean('is_dispatcher')->default(false); // [cite: 111]
+            $table->boolean('is_admin')->default(false); // [cite: 111]
             $table->timestamps();
 
-            // Indexes
-            $table->index('is_dispatcher', 'idx_staff_is_dispatcher');
-            $table->index('is_admin', 'idx_staff_is_admin');
+            // Indexes [cite: 111]
+            $table->index('is_dispatcher');
+            $table->index('is_admin');
         });
     }
 

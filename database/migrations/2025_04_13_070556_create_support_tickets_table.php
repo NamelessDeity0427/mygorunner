@@ -12,21 +12,23 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('support_tickets', function (Blueprint $table) {
-            $table->id();
-            $table->string('ticket_number', 50)->unique();
-            $table->foreignId('user_id')->constrained('users'); // User who created the ticket
-            $table->foreignId('booking_id')->nullable()->constrained('bookings')->onDelete('set null');
-            $table->string('subject');
-            $table->text('description');
-            $table->enum('status', ['open', 'in_progress', 'resolved', 'closed'])->default('open');
-            $table->foreignId('assigned_to')->nullable()->constrained('staff')->onDelete('set null'); // Staff assigned
-            $table->timestamps(); // created_at, updated_at
-            $table->timestamp('resolved_at')->nullable();
+            // Use UUID for primary key
+            $table->uuid('id')->primary(); // Changed from id()
+            $table->string('ticket_number', 50)->unique(); // [cite: 150]
+            // Use foreignUuid for foreign keys
+            $table->foreignUuid('user_id')->constrained('users')->onDelete('cascade'); // User who created [cite: 150]
+            $table->foreignUuid('booking_id')->nullable()->constrained('bookings')->onDelete('set null'); // Optional link to booking [cite: 150]
+            $table->string('subject'); // [cite: 150]
+            $table->text('description'); // [cite: 150]
+            $table->enum('status', ['open', 'in_progress', 'resolved', 'closed'])->default('open'); // [cite: 150]
+            $table->foreignUuid('assigned_to')->nullable()->constrained('staff')->onDelete('set null'); // Staff assigned [cite: 150]
+            $table->timestamps(); // created_at, updated_at [cite: 150]
+            $table->timestamp('resolved_at')->nullable(); // [cite: 150]
 
-            // Indexes
-            $table->index('status', 'idx_support_tickets_status');
-            $table->index('created_at', 'idx_support_tickets_created_at');
-            $table->index('resolved_at', 'idx_support_tickets_resolved_at');
+            // Indexes [cite: 150]
+            $table->index('status');
+            $table->index('created_at');
+            $table->index('resolved_at');
         });
     }
 

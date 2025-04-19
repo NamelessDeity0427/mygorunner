@@ -4,16 +4,35 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class Staff extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
 
-    // Explicitly define table name if it doesn't follow convention (plural snake_case)
-    // protected $table = 'staff'; // Not needed here as 'staff' pluralizes correctly
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
+
+    /**
+     * The table associated with the model.
+     * Laravel correctly pluralizes 'staff' to 'staff', so this is optional.
+     * protected $table = 'staff';
+     */
 
     /**
      * The attributes that are mass assignable.
+     * Be cautious with 'is_dispatcher' and 'is_admin'. Set explicitly where possible.
      *
      * @var array<int, string>
      */
@@ -34,12 +53,14 @@ class Staff extends Model
         'is_admin' => 'boolean',
     ];
 
+    // --- Relationships ---
+
     /**
      * Get the user that owns the staff profile.
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
@@ -47,7 +68,7 @@ class Staff extends Model
      */
     public function processedRemittances()
     {
-        return $this->hasMany(Remittance::class);
+        return $this->hasMany(Remittance::class, 'staff_id', 'id');
     }
 
     /**
@@ -55,6 +76,14 @@ class Staff extends Model
      */
     public function assignedSupportTickets()
     {
-        return $this->hasMany(SupportTicket::class, 'assigned_to');
+        return $this->hasMany(SupportTicket::class, 'assigned_to', 'id');
+    }
+
+    /**
+     * Get the redemption requests processed by this staff member.
+     */
+    public function processedRedemptionRequests()
+    {
+        return $this->hasMany(RedemptionRequest::class, 'processed_by', 'id');
     }
 }

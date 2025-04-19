@@ -4,37 +4,50 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-// Added for spatial integration
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
+// Spatial integration
 use MatanYadaev\EloquentSpatial\Traits\HasSpatial;
 use MatanYadaev\EloquentSpatial\Objects\Point;
 
 /**
- * @property Point $current_location // Added property hint
- * @property \Illuminate\Support\Carbon|null $location_updated_at // Added hint
- * @property bool $is_active // Added hint
- * @property string $status // Added hint
+ * @property Point|null $current_location // Updated property hint for nullability
+ * @property \Illuminate\Support\Carbon|null $location_updated_at
+ * @property bool $is_active
+ * @property string $status
  */
 class Rider extends Model
 {
-    use HasFactory;
-    use HasSpatial; // Added trait
+    use HasUuids, HasFactory, HasSpatial; // Added HasUuids and HasSpatial
+
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
+     * 'is_active' and 'status' might be better controlled explicitly.
      *
      * @var array<int, string>
      */
     protected $fillable = [
-        'user_id', // [cite: 92]
-        'address', // [cite: 92]
-        'vehicle_type', // [cite: 92]
-        'plate_number', // [cite: 92]
-        'is_active', // [cite: 93]
-        // 'current_lat', // [cite: 93] Removed
-        // 'current_lng', // [cite: 93] Removed
-        'current_location', // Added spatial field
-        'location_updated_at', // [cite: 93]
-        'status', // [cite: 93]
+        'user_id',
+        'address',
+        'vehicle_type',
+        'plate_number',
+        // 'is_active', // Consider managing activation status explicitly
+        'current_location', // Spatial field
+        'location_updated_at',
+        // 'status', // Rider status should be managed via specific methods/events
     ];
 
     /**
@@ -43,20 +56,20 @@ class Rider extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'is_active' => 'boolean', // [cite: 93]
-        // 'current_lat' => 'decimal:8', // [cite: 93] Removed
-        // 'current_lng' => 'decimal:8', // [cite: 93] Removed
-        'current_location' => Point::class, // Added spatial cast
-        'location_updated_at' => 'datetime', // [cite: 93]
-        'status' => 'string', // [cite: 93] Cast enum to string (or use PHP 8.1 Enum)
+        'is_active' => 'boolean',
+        'current_location' => Point::class, // Spatial cast
+        'location_updated_at' => 'datetime',
+        'status' => 'string', // Cast enum
     ];
+
+    // --- Relationships ---
 
     /**
      * Get the user that owns the rider profile.
      */
     public function user()
     {
-        return $this->belongsTo(User::class); // [cite: 94]
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     /**
@@ -64,7 +77,7 @@ class Rider extends Model
      */
     public function bookings()
     {
-        return $this->hasMany(Booking::class); // [cite: 95]
+        return $this->hasMany(Booking::class, 'rider_id', 'id');
     }
 
     /**
@@ -72,24 +85,20 @@ class Rider extends Model
      */
     public function remittances()
     {
-        return $this->hasMany(Remittance::class); // [cite: 96]
+        return $this->hasMany(Remittance::class, 'rider_id', 'id');
     }
 
     /**
-     * Get the queue entries for the rider.
+     * REMOVED: Relationship to RiderQueue.
+     * public function queueEntries() { ... }
      */
-    public function queueEntries()
-    {
-        // Ensure RiderQueue model exists or correct the class name
-        return $this->hasMany(RiderQueue::class); // [cite: 97]
-    }
 
     /**
      * Get the attendance records for the rider.
      */
     public function attendanceRecords()
     {
-        return $this->hasMany(Attendance::class); // [cite: 99]
+        return $this->hasMany(Attendance::class, 'rider_id', 'id');
     }
 
     /**
@@ -97,18 +106,22 @@ class Rider extends Model
      */
     public function feedbackReceived()
     {
-        // Ensure CustomerFeedback model exists or correct the class name
-        return $this->hasMany(CustomerFeedback::class); // [cite: 99]
+        return $this->hasMany(CustomerFeedback::class, 'rider_id', 'id');
     }
 
-    // Inside Rider.php
+    /**
+     * Get the earnings records for the rider.
+     */
     public function earnings()
     {
-        return $this->hasMany(RiderEarning::class);
+        return $this->hasMany(RiderEarning::class, 'rider_id', 'id');
     }
 
+    /**
+     * Get the redemption requests made by the rider.
+     */
     public function redemptionRequests()
     {
-        return $this->hasMany(RedemptionRequest::class);
+        return $this->hasMany(RedemptionRequest::class, 'rider_id', 'id');
     }
 }

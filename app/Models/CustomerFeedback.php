@@ -4,14 +4,27 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids; // Import HasUuids trait
 
 class CustomerFeedback extends Model
 {
-    use HasFactory;
+    use HasUuids, HasFactory; // Added HasUuids
 
-    // Specify table name if it differs from pluralized model name convention
-    protected $table = 'customer_feedback';
+    protected $table = 'customer_feedback'; // Explicit table name
 
+    /**
+     * The primary key type.
+     *
+     * @var string
+     */
+    protected $keyType = 'string';
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     *
+     * @var bool
+     */
+    public $incrementing = false;
 
     /**
      * The attributes that are mass assignable.
@@ -32,15 +45,17 @@ class CustomerFeedback extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'rating' => 'integer',
+        'rating' => 'integer', // Ensure rating is within expected range (e.g., 1-5) via validation
     ];
+
+    // --- Relationships ---
 
     /**
      * Get the booking the feedback is for.
      */
     public function booking()
     {
-        return $this->belongsTo(Booking::class);
+        return $this->belongsTo(Booking::class, 'booking_id', 'id');
     }
 
     /**
@@ -48,7 +63,7 @@ class CustomerFeedback extends Model
      */
     public function customer()
     {
-        return $this->belongsTo(Customer::class);
+        return $this->belongsTo(Customer::class, 'customer_id', 'id');
     }
 
     /**
@@ -56,6 +71,6 @@ class CustomerFeedback extends Model
      */
     public function rider()
     {
-        return $this->belongsTo(Rider::class);
+        return $this->belongsTo(Rider::class, 'rider_id', 'id');
     }
 }
